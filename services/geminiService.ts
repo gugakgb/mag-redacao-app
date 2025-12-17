@@ -2,6 +2,21 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { CorrectionResult } from "../types";
 
+// Função segura para ler a chave da API em ambientes Vite/Vercel
+const getApiKey = () => {
+  // @ts-ignore
+  if (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_GOOGLE_API_KEY) {
+    // @ts-ignore
+    return import.meta.env.VITE_GOOGLE_API_KEY;
+  }
+  // @ts-ignore
+  if (typeof process !== 'undefined' && process.env && process.env.API_KEY) {
+    // @ts-ignore
+    return process.env.API_KEY;
+  }
+  return '';
+};
+
 // Schema definition for the JSON response
 const correctionSchema = {
   type: Type.OBJECT,
@@ -66,7 +81,17 @@ export const correctEssay = async (
   fileData: { base64: string; mimeType: string } | null
 ): Promise<CorrectionResult> => {
   
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const apiKey = getApiKey();
+  
+  // Se não houver chave no ambiente, tenta ler do LocalStorage (configuração manual do usuário)
+  // ou lança erro se não encontrar nada.
+  const finalKey = apiKey || localStorage.getItem('gemini_api_key');
+
+  if (!finalKey) {
+      throw new Error("Chave de API não configurada. Configure no arquivo .env ou nas configurações.");
+  }
+
+  const ai = new GoogleGenAI({ apiKey: finalKey });
 
   const systemPrompt = `
     Você é um MENTOR especialista em neurociência e aprovação em concursos públicos (Carreira Policial).
