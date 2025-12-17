@@ -88,7 +88,7 @@ export const correctEssay = async (
   const finalKey = apiKey || localStorage.getItem('gemini_api_key');
 
   if (!finalKey) {
-      throw new Error("Chave de API não configurada. Configure no arquivo .env ou nas configurações.");
+      throw new Error("Chave de API não configurada. Verifique o VITE_GOOGLE_API_KEY na Vercel.");
   }
 
   const ai = new GoogleGenAI({ apiKey: finalKey });
@@ -161,12 +161,26 @@ export const correctEssay = async (
     });
 
     const jsonText = response.text;
-    if (!jsonText) throw new Error("A IA não retornou texto.");
+    if (!jsonText) throw new Error("A IA não retornou texto. Verifique sua conexão ou a Chave de API.");
     
-    return JSON.parse(jsonText) as CorrectionResult;
+    // TÁTICA DE LIMPEZA: Remove blocos de código Markdown se a IA os incluir
+    const cleanedText = jsonText.replace(/^```json\s*/, '').replace(/\s*```$/, '').trim();
 
-  } catch (error) {
+    try {
+        return JSON.parse(cleanedText) as CorrectionResult;
+    } catch (parseError) {
+        console.error("Erro ao processar JSON:", cleanedText);
+        throw new Error("Falha ao processar a resposta da IA. Tente novamente.");
+    }
+
+  } catch (error: any) {
     console.error("Gemini API Error:", error);
+    
+    // Tratamento de erros comuns para feedback ao usuário
+    if (error.message && (error.message.includes("API key") || error.message.includes("403"))) {
+        throw new Error("Erro de Autenticação: Verifique a VITE_GOOGLE_API_KEY na Vercel.");
+    }
+    
     throw error;
   }
 };

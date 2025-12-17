@@ -225,10 +225,11 @@ const App: React.FC = () => {
 
       setResult(enrichedData);
       setStatus(AnalysisStatus.SUCCESS);
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
       setStatus(AnalysisStatus.ERROR);
-      setErrorMessage("Ocorreu um erro ao corrigir a redação. Tente novamente.");
+      // Mostra a mensagem real do erro para o usuário (ex: API Key inválida)
+      setErrorMessage(error.message || "Ocorreu um erro ao corrigir a redação. Tente novamente.");
     }
   };
 
@@ -677,7 +678,7 @@ const App: React.FC = () => {
                             <AlertTriangle size={48} />
                         </div>
                         <h3 className="text-lg font-bold text-slate-700">Erro na Análise</h3>
-                        <p className="text-sm text-slate-400 max-w-sm mx-auto mt-2">
+                        <p className="text-sm text-red-500 max-w-sm mx-auto mt-2 font-medium bg-red-50 p-3 rounded-lg border border-red-100">
                           {errorMessage}
                         </p>
                         <button onClick={() => setStatus(AnalysisStatus.IDLE)} className="mt-6 text-slate-600 underline text-sm hover:text-slate-800">Tentar novamente</button>
